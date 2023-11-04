@@ -1,14 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getThisMonthTotal = exports.deleteDateEntries = exports.getSpecificDateEntries = exports.getTodayEntries = exports.updateEntry = exports.deleteEntry = exports.getEntries = exports.getEntry = exports.createMultipleEntries = exports.createEntry = void 0;
+exports.getSpecificDateEntries = exports.updateEntry = exports.deleteEntry = exports.getEntries = exports.getEntry = exports.createMultipleEntries = exports.createEntry = void 0;
 const entry_1 = require("../models/entry");
 const item_1 = require("../models/item");
 const constants_1 = require("../constants/constants");
 const dateHelpers_1 = require("../helpers/dateHelpers");
-const dayjs_1 = __importDefault(require("dayjs"));
 const createEntry = async (req, res, next) => {
     const { date, itemId, quantity, type } = req.body;
     const dateEntered = new Date(date);
@@ -219,30 +215,6 @@ const updateEntry = async (req, res, next) => {
     }
 };
 exports.updateEntry = updateEntry;
-const getTodayEntries = async (req, res, next) => {
-    const { type } = req.query;
-    const today = (0, dateHelpers_1.formatDate)(new Date());
-    try {
-        if (!type) {
-            const newError = {
-                message: 'Please specify a type',
-                name: 'No Type',
-                status: 403,
-                data: {
-                    message: 'Please specify a type',
-                    statusCode: 404,
-                },
-            };
-            throw newError;
-        }
-        const entries = await entry_1.Entry.find({ type, date: new Date(today) });
-        return res.status(200).json({ entries });
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.getTodayEntries = getTodayEntries;
 const getSpecificDateEntries = async (req, res, next) => {
     const { type, date } = req.query;
     const dateEntered = (0, dateHelpers_1.formatDate)(new Date(date));
@@ -270,58 +242,4 @@ const getSpecificDateEntries = async (req, res, next) => {
     }
 };
 exports.getSpecificDateEntries = getSpecificDateEntries;
-const deleteDateEntries = async (req, res, next) => {
-    const { date, type } = req.query;
-    const dateEntered = new Date(date);
-    try {
-        if (!type) {
-            const newError = {
-                message: 'Please specify a type',
-                name: 'No Type',
-                status: 403,
-                data: {
-                    message: 'Please specify a type',
-                    statusCode: 404,
-                },
-            };
-            throw newError;
-        }
-        const entries = await entry_1.Entry.deleteMany({ date: dateEntered, type });
-        return res.status(200).json({ entries });
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.deleteDateEntries = deleteDateEntries;
-const getThisMonthTotal = async (req, res, next) => {
-    const { type, date } = req.query;
-    const firstDayOfMonth = (0, dayjs_1.default)(new Date()).startOf('month').add(1, 'day');
-    const lastDayOfMonth = (0, dayjs_1.default)(new Date()).endOf('month');
-    console.log(firstDayOfMonth, lastDayOfMonth);
-    const dateEntered = (0, dateHelpers_1.formatDate)(new Date(date));
-    try {
-        if (!type) {
-            const newError = {
-                message: 'Please specify a type',
-                name: 'No Type',
-                status: 403,
-                data: {
-                    message: 'Please specify a type',
-                    statusCode: 404,
-                },
-            };
-            throw newError;
-        }
-        const entries = await entry_1.Entry.find({
-            type,
-            date: new Date(dateEntered),
-        });
-        return res.status(200).json({ entries });
-    }
-    catch (error) {
-        next(error);
-    }
-};
-exports.getThisMonthTotal = getThisMonthTotal;
 //# sourceMappingURL=entry.js.map
