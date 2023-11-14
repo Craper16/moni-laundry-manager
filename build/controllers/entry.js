@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSpecificDateEntries = exports.updateEntry = exports.deleteEntry = exports.getEntries = exports.getEntry = exports.createMultipleEntries = exports.createEntry = void 0;
+exports.getSpecificDateEntries = exports.updateEntry = exports.deleteEntry = exports.getTotals = exports.getEntries = exports.getEntry = exports.createMultipleEntries = exports.createEntry = void 0;
 const entry_1 = require("../models/entry");
 const item_1 = require("../models/item");
 const constants_1 = require("../constants/constants");
@@ -149,6 +149,59 @@ const getEntries = async (req, res, next) => {
     }
 };
 exports.getEntries = getEntries;
+const getTotals = async (req, res, next) => {
+    const { type, date_from, date_to } = req.query;
+    if (!type) {
+        const newError = {
+            message: 'Please specify a type',
+            name: 'No Type',
+            status: 403,
+            data: {
+                message: 'Please specify a type',
+                statusCode: 404,
+            },
+        };
+        throw newError;
+    }
+    if (!date_from || !date_to) {
+        const newError = {
+            message: 'Dates not specified',
+            name: 'No Type',
+            status: 403,
+            data: {
+                message: 'Dates not specified',
+                statusCode: 404,
+            },
+        };
+        throw newError;
+    }
+    const dateFrom = date_from ? new Date(date_from) : undefined;
+    const dateTo = date_to ? new Date(date_to) : undefined;
+    try {
+        const entries = await entry_1.Entry.find({
+            date: { $gte: dateFrom, $lte: dateTo },
+            type,
+        });
+        let finalEntries = [];
+        for (const entry of entries) {
+            const entryAlreadyInArray = finalEntries.findIndex((ent) => ent.item === entry.item);
+            if (entryAlreadyInArray !== -1) {
+                finalEntries[entryAlreadyInArray] = {
+                    item: finalEntries[entryAlreadyInArray].item,
+                    quantity: finalEntries[entryAlreadyInArray].quantity + entry.quantity,
+                };
+            }
+            else {
+                finalEntries.push({ item: entry.item, quantity: entry.quantity });
+            }
+        }
+        return res.status(200).json({ totals: finalEntries });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.getTotals = getTotals;
 const deleteEntry = async (req, res, next) => {
     const { entry_id } = req.params;
     try {

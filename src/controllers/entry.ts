@@ -1,10 +1,10 @@
 import { RequestHandler } from 'express';
-import { Entry } from '../models/entry';
+import { Entry, EntryModel } from '../models/entry';
 import { ErrorResponse } from '..';
 import { Item } from '../models/item';
 import { PER_PAGE } from '../constants/constants';
 import { formatDate } from '../helpers/dateHelpers';
-import dayjs from 'dayjs';
+import { Document, Schema, Types } from 'mongoose';
 
 export const createEntry: RequestHandler = async (req, res, next) => {
   const { date, itemId, quantity, type } = req.body as {
@@ -182,6 +182,74 @@ export const getEntries: RequestHandler = async (req, res, next) => {
     );
 
     return res.status(200).json({ entries });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTotals: RequestHandler = async (req, res, next) => {
+  const { type, date_from, date_to } = req.query as {
+    date_from?: string;
+    date_to?: string;
+    type: 'in' | 'out';
+  };
+
+  if (!type) {
+    const newError: ErrorResponse = {
+      message: 'Please specify a type',
+      name: 'No Type',
+      status: 403,
+      data: {
+        message: 'Please specify a type',
+        statusCode: 404,
+      },
+    };
+    throw newError;
+  }
+
+  if (!date_from || !date_to) {
+    const newError: ErrorResponse = {
+      message: 'Dates not specified',
+      name: 'No Type',
+      status: 403,
+      data: {
+        message: 'Dates not specified',
+        statusCode: 404,
+      },
+    };
+    throw newError;
+  }
+
+  const dateFrom = date_from ? new Date(date_from) : undefined;
+  const dateTo = date_to ? new Date(date_to) : undefined;
+
+  try {
+    const entries = await Entry.find({
+      date: { $gte: dateFrom, $lte: dateTo },
+      type,
+    });
+
+    let finalEntries: {
+      item: Schema.Types.ObjectId;
+      quantity: number;
+    }[] = [];
+
+    for (const entry of entries) {
+      const entryAlreadyInArray = finalEntries.findIndex(
+        (ent) => ent.item === entry.item
+      );
+
+      if (entryAlreadyInArray !== -1) {
+        finalEntries[entryAlreadyInArray] = {
+          item: finalEntries[entryAlreadyInArray].item,
+          quantity: finalEntries[entryAlreadyInArray].quantity + entry.quantity,
+        };
+      } else {
+        finalEntries.push({ item: entry.item, quantity: entry.quantity });
+      }
+    }
+
+    return res.status(200).json({ totals: finalEntries });
   } catch (error) {
     next(error);
   }

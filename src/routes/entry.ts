@@ -6,6 +6,7 @@ import {
   getEntries,
   getEntry,
   getSpecificDateEntries,
+  getTotals,
   updateEntry,
 } from '../controllers/entry';
 
@@ -14,6 +15,8 @@ const router = Router();
 router.get('/all', getEntries);
 
 router.get('/by-date', getSpecificDateEntries);
+
+router.get('/totals', getTotals);
 
 router.get('/:entry_id', getEntry);
 
@@ -24,5 +27,6 @@ router.post('/', createEntry);
 router.delete('/:entry_id', deleteEntry);
 
 router.put('/:entry_id', updateEntry);
+
 
 export default router;
